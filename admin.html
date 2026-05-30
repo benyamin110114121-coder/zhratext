@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>پنل مدیریت</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Tahoma, sans-serif;
+      background: #f0f2f5;
+      padding: 30px 20px;
+    }
+
+    /* صفحه لاگین */
+    #login-screen {
+      max-width: 360px;
+      margin: 80px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    #login-screen h2 { margin-bottom: 20px; color: #333; }
+    #login-screen input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    #login-screen button {
+      width: 100%;
+      padding: 10px;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    #login-screen button:hover { background: #4338ca; }
+    #login-error { color: red; font-size: 0.9rem; margin-top: 10px; }
+
+    /* پنل ادمین */
+    #admin-panel { display: none; max-width: 700px; margin: 0 auto; }
+    #admin-panel h1 { text-align: center; margin-bottom: 24px; color: #333; }
+
+    .form-box {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    .form-box h2 { margin-bottom: 16px; color: #444; font-size: 1rem; }
+    .form-box input,
+    .form-box textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+      font-family: Tahoma, sans-serif;
+    }
+    .form-box textarea { height: 100px; resize: vertical; }
+    .form-box button {
+      padding: 10px 24px;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    .form-box button:hover { background: #4338ca; }
+    #status { margin-top: 10px; font-size: 0.9rem; color: green; }
+
+    /* لیست پست‌ها */
+    .post-item {
+      background: white;
+      padding: 16px 20px;
+      border-radius: 10px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .post-item span { font-size: 0.95rem; color: #333; }
+    .post-item button {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .post-item button:hover { background: #dc2626; }
+  </style>
+</head>
+<body>
+
+  <!-- صفحه لاگین -->
+  <div id="login-screen">
+    <h2>ورود به پنل مدیریت</h2>
+    <input type="password" id="password-input" placeholder="رمز عبور">
+    <button onclick="login()">ورود</button>
+    <p id="login-error"></p>
+  </div>
+
+  <!-- پنل ادمین -->
+  <div id="admin-panel">
+    <h1>پنل مدیریت</h1>
+
+    <div class="form-box">
+      <h2>افزودن کارت جدید</h2>
+      <input type="text" id="new-title" placeholder="عنوان">
+      <textarea id="new-content" placeholder="متن کارت"></textarea>
+      <button onclick="addPost()">افزودن</button>
+      <p id="status"></p>
+    </div>
+
+    <div id="posts-list"></div>
+  </div>
+
+  <script>
+    const BIN_ID = '6a1b25b321f9ee59d29e770e';
+    const API_KEY = '$2a$10$SfM1tRVwgK2pRkyJ73yCpeLmwW9QZVgCXd2qFKds9..0rJ4/m.IGG';
+    const ADMIN_PASS = '2e4r4sd';
+
+    let posts = [];
+
+    function login() {
+      const val = document.getElementById('password-input').value;
+      if (val === ADMIN_PASS) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('admin-panel').style.display = 'block';
+        loadPosts();
+      } else {
+        document.getElementById('login-error').textContent = 'رمز اشتباه است';
+      }
+    }
+
+    // ورود با Enter
+    document.getElementById('password-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') login();
+    });
+
+    async function loadPosts() {
+      const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+        headers: { 'X-Master-Key': API_KEY }
+      });
+      const data = await res.json();
+      posts = data.record.posts || [];
+      renderList();
+    }
+
+    function renderList() {
+      const container = document.getElementById('posts-list');
+      if (posts.length === 0) {
+        container.innerHTML = '<p style="text-align:center;color:#888">هنوز کارتی وجود ندارد</p>';
+        return;
+      }
+      container.innerHTML = posts.map((post, i) => `
+        <div class="post-item">
+          <span>${post.title}</span>
+          <button onclick="deletePost(${i})">حذف</button>
+        </div>
+      `).join('');
+    }
+
+    async function savePosts() {
+      await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': API_KEY
+        },
+        body: JSON.stringify({ posts })
+      });
+    }
+
+    async function addPost() {
+      const title = document.getElementById('new-title').value.trim();
+      const content = document.getElementById('new-content').value.trim();
+      const status = document.getElementById('status');
+
+      if (!title || !content) {
+        status.style.color = 'red';
+        status.textContent = 'عنوان و متن را پر کنید';
+        return;
+      }
+
+      posts.push({ title, content });
+      await savePosts();
+
+      document.getElementById('new-title').value = '';
+      document.getElementById('new-content').value = '';
+      status.style.color = 'green';
+      status.textContent = 'کارت با موفقیت اضافه شد';
+      renderList();
+
+      setTimeout(() => status.textContent = '', 3000);
+    }
+
+    async function deletePost(index) {
+      if (!confirm('این کارت حذف شود؟')) return;
+      posts.splice(index, 1);
+      await savePosts();
+      renderList();
+    }
+  </script>
+</body>
+</html>

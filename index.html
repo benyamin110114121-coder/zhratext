@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>کارت‌های متنی</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Tahoma, sans-serif;
+      background: #f0f2f5;
+      padding: 30px 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #333;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+      color: #222;
+    }
+    .card p {
+      font-size: 0.95rem;
+      color: #555;
+      line-height: 1.7;
+    }
+    .loading {
+      text-align: center;
+      color: #888;
+      margin-top: 60px;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>کارت‌های متنی</h1>
+  <div class="cards" id="cards">
+    <p class="loading">در حال بارگذاری...</p>
+  </div>
+
+  <script>
+    const BIN_ID = '6a1b25b321f9ee59d29e770e';
+    const API_KEY = '$2a$10$SfM1tRVwgK2pRkyJ73yCpeLmwW9QZVgCXd2qFKds9..0rJ4/m.IGG';
+
+    async function loadPosts() {
+      try {
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+          headers: { 'X-Master-Key': API_KEY }
+        });
+        const data = await res.json();
+        const posts = data.record.posts || [];
+        renderCards(posts);
+      } catch (e) {
+        document.getElementById('cards').innerHTML = '<p class="loading">خطا در بارگذاری</p>';
+      }
+    }
+
+    function renderCards(posts) {
+      const container = document.getElementById('cards');
+      if (posts.length === 0) {
+        container.innerHTML = '<p class="loading">هنوز کارتی اضافه نشده</p>';
+        return;
+      }
+      container.innerHTML = posts.map(post => `
+        <div class="card">
+          <h2>${post.title}</h2>
+          <p>${post.content}</p>
+        </div>
+      `).join('');
+    }
+
+    loadPosts();
+  </script>
+</body>
+</html>
